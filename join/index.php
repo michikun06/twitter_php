@@ -2,7 +2,10 @@
 // サーバー側にデータを一時的に保存するための関数（$_SESSION['セッション名']＝保存したいもの　でサーバー側に保存できる。）
 session_start();
 
-if (!empty($_POST)) {     // 入力内容が空でない時にエラーチェックを実行する
+require('../dbconnect.php');
+
+// 入力内容が空でない時にエラーチェックを実行する
+if (!empty($_POST)) {
 	if ($_POST['name'] === '') {
 		$error['name'] = 'blank';
 	}
@@ -17,6 +20,17 @@ if (!empty($_POST)) {     // 入力内容が空でない時にエラーチェッ
 	}
 	$fileName = $_FILES['image']['name'];
 
+	// アカウントの重複チェック(エラー項目を通過後)
+	if (empty($error)) {
+		$member = $db->prepare('SELECT COUNT(*) AS cnt FROM members WHERE email=?');     // members内のデータの数をcntという名前で管理(emailで絞り込む)
+		$member->execute(array($_POST['email']));     // 入力された内容を上のemailに格納する
+		$record = $member->fetch();     // DBと通信して、入力されているemailがあれば1,なければ０を返す。
+		if ($record['cnt'] > 0) {
+			$error['email'] = 'duplicate';
+		}
+	}
+
+	// 画像データ以外はエラーとする
 	if (!empty($fileName)) {     // fileデータが存在する時に(fileName)内にデータが存在する時にファイル検査を実行
 		$ext = substr($fileName, -3);     // ファイル名の後ろ3文字（拡張子）を切り取って変数に代入する
 		if ($ext != 'jpg' && $ext != 'gif'  && $ext != 'png') {
@@ -25,16 +39,21 @@ if (!empty($_POST)) {     // 入力内容が空でない時にエラーチェッ
 	}
 
 	if (empty($error)) {
-		// echo '<script>';
-		// echo 'console.log(' . json_encode('通過しました') . ')';
-		// echo '</script>';
 		$image = date('YmdHis') . $_FILES['image']['name'];     // 「日付+ファイル名.png」のような形でファイルを保存する。
+
 		// アップロードされたファイルを専用のディレクトリに保存するための関数
 		// move_uploaded_file($_FILES[‘name属性の値’][‘tmp_name’],　'移動先のパスを指定');
 		move_uploaded_file($_FILES['image']['tmp_name'], '../member_picture/' . $image);
 
 		$_SESSION['join'] = $_POST;     // 入力内容を"$_SESSION['join']"に一時保存する
-		$_SESSION['join']['image'] = $image;     // fileデータを"$_SESSION['join']['image']"に一時保存する
+
+		// fileデータがある場合は$_SESSION['join']['image']に作成した名前を保存、ない場合は空にする。
+		if (!empty($fileName)) {
+			$_SESSION['join']['image'] = $image;
+		} else {
+			$_SESSION['join']['image'] = "";
+		}
+
 		header('Location: check.php');     // check.phpにジャンプする
 		exit();        // 終了する
 	}
@@ -81,6 +100,9 @@ if ($_REQUEST['action'] = 'rewrite' && isset($_SESSION['join'])) {
 						<input type="text" name="email" size="35" maxlength="255" value="<?php print(htmlspecialchars($_POST['email'], ENT_QUOTES)); ?>" />
 						<?php if ($error['email'] === 'blank') : ?>
 							<p class="error">※ メールアドレスを入力してください。</p>
+						<?php endif ?>
+						<?php if ($error['email'] === 'duplicate') : ?>
+							<p class="error">※ 指定されたメールアドレスはすでに登録されています。</p>
 						<?php endif ?>
 					<dt>パスワード<span class="required">必須</span></dt>
 					<dd>
