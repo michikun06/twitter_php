@@ -86,10 +86,17 @@ if (isset($_REQUEST['res'])) {
         <div class="msg">
           <img src="member_picture/<?php print(htmlspecialchars($post['picture'], ENT_QUOTES)); ?>" width="48" height="48" alt="<?php print(htmlspecialchars($post['picture'], ENT_QUOTES)); ?>" /> <!-- 投稿者の画像を表示 -->
           <p><?php print(htmlspecialchars($post['message'], ENT_QUOTES)); ?><span class="name">（<?php print(htmlspecialchars($post['name'], ENT_QUOTES)); ?>）</span>[<a href="index.php?res=<?php print(htmlspecialchars($post['id'], ENT_QUOTES)); ?>">Re</a>]</p> <!-- 投稿内容と名前を表示、Reにリンクを示す -->
-          <p class="day"><a href="view.php?id="><?php print(htmlspecialchars($post['created'], ENT_QUOTES)); ?></a> <!-- 投稿日時を表示 -->
-            <a href="view.php?id=">
-              返信元のメッセージ</a>
-            [<a href="delete.php?id=" style="color: #F33;">削除</a>]
+          <p class="day"><a href="view.php?id=<?php print(htmlspecialchars($post['id'])); ?>"><?php print(htmlspecialchars($post['created'], ENT_QUOTES)); ?></a> <!-- 投稿日時を表示(メッセージ専用ページへとぶ) -->
+
+            <!-- 返信メッセージにのみ表示 -->
+            <?php if ($post['reply_message_id']) : ?>
+
+              <!-- 返信元のリンクが表示される -->
+              <a href="view.php?id=<?php print(htmlspecialchars($post['reply_message_id'])); ?>">
+                返信元のメッセージ</a>
+              [<a href="delete.php?id=" style="color: #F33;">削除</a>]
+            <?php endif; ?>
+
           </p>
         </div>
       <?php endforeach; ?>
