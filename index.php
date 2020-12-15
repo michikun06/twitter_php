@@ -32,8 +32,27 @@ if (!empty($_POST)) {     // postのあるformが空出なければ実行
   }
 }
 
+
+$page = $_REQUEST['page'];     // URLのページ数を格納
+
+// $pageが空の場合は１が入る
+if ($page == '') {
+  $page = 1;
+}
+$page = max($page, 1);     // $pageは必ず1以上の数字になる
+
+$counts = $db->query('SELECT COUNT(*) as cnt FROM posts');     // 投稿したメッセージの件数を取得するSQL
+$cnt = $counts->fetch();
+$maxPage = ceil($cnt['cnt'] / 5);     // 投稿件数÷５の値を切り上げして、最大のページ数を算出
+$page = min($page, $maxPage);     // 最大ページ数以上の数字が入らない
+
+
+$start = ($page - 1) * 5;     // ページ数によってスタート位置を可変にする（5の倍数を先頭）
+
 // メンバーの名前、画像と投稿メッセージの全ての情報を取得して、メンバーのidとメッセージ投稿者のidが一致するものを連結させて、投稿された時間順で並べて格納。
-$posts = $db->query('SELECT m.name, m.picture, p.*FROM members m, posts p WHERE m.id=p.member_id ORDER BY p.created DESC');
+$posts = $db->prepare('SELECT m.name, m.picture, p.*FROM members m, posts p WHERE m.id=p.member_id ORDER BY p.created DESC LIMIT ?,5');     // 先頭から五件取得
+$posts->bindParam(1, $start, PDO::PARAM_INT);
+$posts->execute();
 
 // 「Re」がクリックされた時に返信できるような処理を行う。
 if (isset($_REQUEST['res'])) {
@@ -103,9 +122,21 @@ if (isset($_REQUEST['res'])) {
         </div>
       <?php endforeach; ?>
 
+      <!-- ページネーション -->
       <ul class="paging">
-        <li><a href="index.php?page=">前のページへ</a></li>
-        <li><a href="index.php?page=">次のページへ</a></li>
+
+        <?php if ($page > 1) : ?>
+          <li><a href="index.php?page=<?php print($page - 1) ?>">前のページへ</a></li>
+        <?php else : ?>
+          <li>前のページへ</li>
+        <?php endif; ?>
+
+        <?php if ($page < $maxPage) : ?>
+          <li><a href="index.php?page=<?php print($page + 1) ?>">次のページへ</a></li>
+        <?php else : ?>
+          <li>次のページへ</li>
+        <?php endif; ?>
+
       </ul>
     </div>
   </div>
