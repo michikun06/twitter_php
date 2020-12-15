@@ -90,11 +90,13 @@ if (isset($_REQUEST['res'])) {
 
             <!-- 返信メッセージにのみ表示 -->
             <?php if ($post['reply_message_id']) : ?>
-
               <!-- 返信元のリンクが表示される -->
-              <a href="view.php?id=<?php print(htmlspecialchars($post['reply_message_id'])); ?>">
-                返信元のメッセージ</a>
-              [<a href="delete.php?id=" style="color: #F33;">削除</a>]
+              <a href="view.php?id=<?php print(htmlspecialchars($post['reply_message_id'])); ?>">返信元のメッセージ</a>
+            <?php endif; ?>
+
+            <!-- 自分の投稿にのみ削除ボタンを実装 -->
+            <?php if ($_SESSION['id']  === $post['member_id']) : ?>
+              [<a href="delete.php?id=<?php print(htmlspecialchars($post['id'])); ?>" style="color: #F33;">削除</a>]
             <?php endif; ?>
 
           </p>
